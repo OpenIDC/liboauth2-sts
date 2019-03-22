@@ -1,0 +1,8 @@
+/.deps/
+/.libs/
+/*.o
+/*.log
+/*.trs
+/*.gcda
+/*.gcno
+/.dirstamp
