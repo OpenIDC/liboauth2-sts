@@ -385,7 +385,8 @@ out:
 #define STS_WSTRUST_REQ_SIZE_MAX 32768
 
 bool sts_wstrust_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
-		      const char *token, char **rtoken)
+		      const char *token, char **rtoken,
+		      oauth2_uint_t *status_code)
 {
 	char *response = NULL, *rst = NULL;
 	const char *id1 = "_0";
@@ -397,7 +398,6 @@ bool sts_wstrust_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 	bool rc = false;
 	oauth2_http_call_ctx_t *ctx = NULL;
 	char data[STS_WSTRUST_REQ_SIZE_MAX];
-	oauth2_uint_t status_code = 0;
 
 	oauth2_debug(log, "enter");
 
@@ -437,10 +437,10 @@ bool sts_wstrust_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 				     sts_cfg_wstrust_get_endpoint(cfg));
 
 	if (oauth2_http_call(log, sts_cfg_wstrust_get_endpoint(cfg), data, ctx,
-			     &response, &status_code) == false)
+			     &response, status_code) == false)
 		goto end;
 
-	if ((status_code < 200) || (status_code >= 300))
+	if ((*status_code < 200) || (*status_code >= 300))
 		goto end;
 
 	rc = sts_wstrust_parse_token(log, cfg, response, token_type, rtoken);

@@ -715,13 +715,13 @@ void sts_merge_request_parameters(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 bool sts_util_oauth_call(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 			 oauth2_http_call_ctx_t *ctx,
 			 const char *token_endpoint,
-			 const oauth2_nv_list_t *params, char **rtoken)
+			 const oauth2_nv_list_t *params, char **rtoken,
+			 oauth2_uint_t *status_code)
 {
 	bool rc = false;
 	char *response = NULL;
 	json_t *result = NULL;
 	char *tkn = NULL;
-	oauth2_uint_t status_code = 0;
 
 	oauth2_http_call_ctx_ssl_verify_set(
 	    log, ctx, sts_cfg_get_ssl_validation(cfg) != 0);
@@ -730,10 +730,10 @@ bool sts_util_oauth_call(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	// oauth2_http_call_ctx_outgoing_proxy_set(log, ctx, outgoing_proxy);
 
 	if (oauth2_http_post_form(log, token_endpoint, params, ctx, &response,
-				  &status_code) == false)
+				  status_code) == false)
 		goto end;
 
-	if ((status_code < 200) || (status_code >= 300))
+	if ((*status_code < 200) || (*status_code >= 300))
 		goto end;
 
 	if (oauth2_json_decode_check_error(log, response, &result) == false)
@@ -789,19 +789,20 @@ end:
 }
 
 static bool sts_token_exchange_exec(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
-				    const char *token, char **rtoken)
+				    const char *token, char **rtoken,
+				    oauth2_http_status_code_t *status_code)
 {
 	bool rc = false;
 
 	switch (sts_cfg_get_type(cfg)) {
 	case STS_TYPE_WSTRUST:
-		rc = sts_wstrust_exec(log, cfg, token, rtoken);
+		rc = sts_wstrust_exec(log, cfg, token, rtoken, status_code);
 		break;
 	case STS_TYPE_ROPC:
-		rc = sts_ropc_exec(log, cfg, token, rtoken);
+		rc = sts_ropc_exec(log, cfg, token, rtoken, status_code);
 		break;
 	case STS_TYPE_OTX:
-		rc = sts_otx_exec(log, cfg, token, rtoken);
+		rc = sts_otx_exec(log, cfg, token, rtoken, status_code);
 		break;
 	case STS_TYPE_DISABLED:
 		break;
@@ -814,7 +815,7 @@ static bool sts_token_exchange_exec(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 }
 
 bool sts_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg, char *source_token,
-		 char **target_token)
+		 char **target_token, oauth2_http_status_code_t *status_code)
 {
 	bool rc = false;
 	char *cache_key = NULL;
@@ -828,7 +829,8 @@ bool sts_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg, char *source_token,
 
 	if (*target_token == NULL) {
 		if (sts_token_exchange_exec(log, cfg, source_token,
-					    target_token) == false) {
+					    target_token,
+					    status_code) == false) {
 			oauth2_error(log, "sts_util_token_exchange failed");
 			goto end;
 		}
@@ -860,7 +862,8 @@ oauth2_cfg_source_token_t *sts_accept_source_token_in_get(oauth2_log_t *log,
 bool sts_request_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 			 oauth2_http_request_t *request, char **source_token,
 			 oauth2_cfg_server_callback_funcs_t *srv_cb,
-			 void *srv_cb_ctx)
+			 void *srv_cb_ctx,
+			 oauth2_http_status_code_t *status_code)
 {
 	bool rc = false;
 	char *target_token = NULL;
@@ -873,7 +876,7 @@ bool sts_request_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	if (*source_token == NULL)
 		goto end;
 
-	rc = sts_handler(log, cfg, *source_token, &target_token);
+	rc = sts_handler(log, cfg, *source_token, &target_token, status_code);
 	if (rc == false)
 		goto end;
 

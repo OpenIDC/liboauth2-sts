@@ -71,7 +71,7 @@ static const char *sts_ropc_get_username(oauth2_cfg_sts_t *cfg)
 }
 
 bool sts_ropc_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
-		   char **rtoken)
+		   char **rtoken, oauth2_uint_t *status_code)
 {
 
 	bool rc = false;
@@ -106,7 +106,7 @@ bool sts_ropc_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
 		goto end;
 
 	rc = sts_util_oauth_call(log, cfg, ctx, sts_ropc_get_endpoint(cfg),
-				 params, rtoken);
+				 params, rtoken, status_code);
 
 end:
 

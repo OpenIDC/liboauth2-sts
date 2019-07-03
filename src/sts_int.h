@@ -70,13 +70,15 @@ void sts_merge_request_parameters(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 bool sts_util_oauth_call(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 			 oauth2_http_call_ctx_t *ctx,
 			 const char *token_endpoint,
-			 const oauth2_nv_list_t *params, char **rtoken);
+			 const oauth2_nv_list_t *params, char **rtoken,
+			 oauth2_uint_t *status_code);
 
 bool sts_wstrust_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
-		      const char *token, char **rtoken);
+		      const char *token, char **rtoken,
+		      oauth2_uint_t *status_code);
 bool sts_ropc_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
-		   char **rtoken);
+		   char **rtoken, oauth2_uint_t *status_code);
 bool sts_otx_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
-		  char **rtoken);
+		  char **rtoken, oauth2_uint_t *status_code);
 
 #endif /* _OAUTH2_STS_INT_H_ */
