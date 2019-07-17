@@ -115,11 +115,13 @@ char sts_get_pass_target_token_in(oauth2_sts_cfg_t *cfg);
 const char *sts_get_pass_target_token_in_hdr_name(oauth2_sts_cfg_t *cfg);
 
 bool sts_request_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
-			 oauth2_http_request_t *request, char **source_token,
+			 oauth2_http_request_t *request, const char *user,
+			 char **source_token,
 			 oauth2_cfg_server_callback_funcs_t *srv_cb,
 			 void *srv_cb_ctx,
 			 oauth2_http_status_code_t *status_code);
 bool sts_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg, char *source_token,
-		 char **target_token, oauth2_http_status_code_t *status_code);
+		 const char *user, char **target_token,
+		 oauth2_http_status_code_t *status_code);
 
 #endif /* _OAUTH2_STS_H_ */

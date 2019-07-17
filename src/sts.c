@@ -789,7 +789,8 @@ end:
 }
 
 static bool sts_token_exchange_exec(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
-				    const char *token, char **rtoken,
+				    const char *token, const char *user,
+				    char **rtoken,
 				    oauth2_http_status_code_t *status_code)
 {
 	bool rc = false;
@@ -799,7 +800,7 @@ static bool sts_token_exchange_exec(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 		rc = sts_wstrust_exec(log, cfg, token, rtoken, status_code);
 		break;
 	case STS_TYPE_ROPC:
-		rc = sts_ropc_exec(log, cfg, token, rtoken, status_code);
+		rc = sts_ropc_exec(log, cfg, token, user, rtoken, status_code);
 		break;
 	case STS_TYPE_OTX:
 		rc = sts_otx_exec(log, cfg, token, rtoken, status_code);
@@ -815,7 +816,8 @@ static bool sts_token_exchange_exec(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 }
 
 bool sts_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg, char *source_token,
-		 char **target_token, oauth2_http_status_code_t *status_code)
+		 const char *user, char **target_token,
+		 oauth2_http_status_code_t *status_code)
 {
 	bool rc = false;
 	char *cache_key = NULL;
@@ -828,7 +830,7 @@ bool sts_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg, char *source_token,
 		     sts_cfg_get_cache(log, cfg), cfg->path, *target_token);
 
 	if (*target_token == NULL) {
-		if (sts_token_exchange_exec(log, cfg, source_token,
+		if (sts_token_exchange_exec(log, cfg, source_token, user,
 					    target_token,
 					    status_code) == false) {
 			oauth2_error(log, "sts_util_token_exchange failed");
@@ -860,7 +862,8 @@ oauth2_cfg_source_token_t *sts_accept_source_token_in_get(oauth2_log_t *log,
 }
 
 bool sts_request_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
-			 oauth2_http_request_t *request, char **source_token,
+			 oauth2_http_request_t *request, const char *user,
+			 char **source_token,
 			 oauth2_cfg_server_callback_funcs_t *srv_cb,
 			 void *srv_cb_ctx,
 			 oauth2_http_status_code_t *status_code)
@@ -876,7 +879,8 @@ bool sts_request_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	if (*source_token == NULL)
 		goto end;
 
-	rc = sts_handler(log, cfg, *source_token, &target_token, status_code);
+	rc = sts_handler(log, cfg, *source_token, user, &target_token,
+			 status_code);
 	if (rc == false)
 		goto end;
 

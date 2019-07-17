@@ -62,23 +62,28 @@ static const char *sts_ropc_get_client_id(oauth2_cfg_sts_t *cfg)
 	return cfg->ropc_client_id;
 }
 
-static const char *sts_ropc_get_username(oauth2_cfg_sts_t *cfg)
+static const char *sts_ropc_get_username(oauth2_cfg_sts_t *cfg,
+					 const char *user)
 {
 	if (cfg->ropc_username == NULL)
 		// return the client_id by default
 		return sts_ropc_get_client_id(cfg);
+	if (strcmp(cfg->ropc_username, "*") == 0)
+		// special handling to pull the authenticated username from a
+		// previously triggered module
+		return user;
 	return cfg->ropc_username;
 }
 
 bool sts_ropc_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
-		   char **rtoken, oauth2_uint_t *status_code)
+		   const char *user, char **rtoken, oauth2_uint_t *status_code)
 {
 
 	bool rc = false;
 	oauth2_nv_list_t *params = NULL;
 	oauth2_http_call_ctx_t *ctx = NULL;
 	const char *client_id = sts_ropc_get_client_id(cfg);
-	const char *username = sts_ropc_get_username(cfg);
+	const char *username = sts_ropc_get_username(cfg, user);
 
 	oauth2_debug(log, "enter");
 
