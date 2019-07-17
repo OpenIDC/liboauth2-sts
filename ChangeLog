@@ -1,2 +1,5 @@
+07/17/2019
+- add r->user to sts_hander
+
 07/03/2019
 - return status code from HTTP callouts
