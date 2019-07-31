@@ -453,6 +453,9 @@ const char *sts_cfg_set_accept_source_token_in(oauth2_sts_cfg_t *cfg,
 					       const char *type,
 					       const char *options)
 {
+	if (cfg->accept_source_token_in == NULL)
+		cfg->accept_source_token_in =
+		    oauth2_cfg_source_token_init(NULL);
 	return oauth2_cfg_source_token_set_accept_in(
 	    NULL, cfg->accept_source_token_in, type, options);
 }

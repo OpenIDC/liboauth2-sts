@@ -1,3 +1,6 @@
+08/01/2019
+- fix cfg->accept_source_token_in initialization
+
 07/17/2019
 - add r->user to sts_hander
 
