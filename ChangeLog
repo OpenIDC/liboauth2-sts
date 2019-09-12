@@ -1,3 +1,6 @@
+09/12/2019
+- depend on liboauth2 1.2.0 with new request header API
+
 08/01/2019
 - fix cfg->accept_source_token_in initialization
 

@@ -556,7 +556,7 @@ static bool _sts_set_target_token_in_header(oauth2_log_t *log,
 	oauth2_debug(log, "set header to backend: %s: %s", header_name,
 		     header_value);
 
-	rc = oauth2_http_request_hdr_in_set(log, request, header_name,
+	rc = oauth2_http_request_header_set(log, request, header_name,
 					    header_value);
 
 	oauth2_debug(log, "leave: %d", rc);
@@ -600,9 +600,8 @@ static bool _sts_set_target_token_in_post(
 
 	oauth2_debug(log, "enter");
 
-	content_type = oauth2_http_hdr_in_content_type_get(log, request);
-
-	content_type = oauth2_http_hdr_in_content_type_get(log, request);
+	content_type =
+	    oauth2_http_request_header_content_type_get(log, request);
 	if ((oauth2_http_request_method_get(log, request) !=
 	     OAUTH2_HTTP_METHOD_POST) ||
 	    (strcasecmp(content_type, OAUTH2_CONTENT_TYPE_FORM_ENCODED) != 0)) {
