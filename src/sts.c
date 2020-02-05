@@ -1,6 +1,6 @@
 /***************************************************************************
  *
- * Copyright (C) 2018-2019 - ZmartZone Holding BV - www.zmartzone.eu
+ * Copyright (C) 2018-2020 - ZmartZone Holding BV - www.zmartzone.eu
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -83,10 +83,7 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path)
 	c->wstrust_token_type = NULL;
 	c->wstrust_value_type = NULL;
 
-	c->ropc_endpoint = NULL;
-	c->ropc_endpoint_auth = NULL;
-	c->ropc_client_id = NULL;
-	c->ropc_username = NULL;
+	c->ropc = NULL;
 
 	c->otx_endpoint = NULL;
 	c->otx_endpoint_auth = NULL;
@@ -137,17 +134,8 @@ void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	    oauth2_strdup(add->wstrust_value_type ? add->wstrust_value_type
 						  : base->wstrust_value_type);
 
-	cfg->ropc_endpoint = oauth2_strdup(
-	    add->ropc_endpoint ? add->ropc_endpoint : base->ropc_endpoint);
-	cfg->ropc_endpoint_auth =
-	    add->ropc_endpoint_auth
-		? oauth2_cfg_endpoint_auth_clone(NULL, add->ropc_endpoint_auth)
-		: oauth2_cfg_endpoint_auth_clone(NULL,
-						 base->ropc_endpoint_auth);
-	cfg->ropc_client_id = oauth2_strdup(
-	    add->ropc_client_id ? add->ropc_client_id : base->ropc_client_id);
-	cfg->ropc_username = oauth2_strdup(
-	    add->ropc_username ? add->ropc_username : base->ropc_username);
+	cfg->ropc = add->ropc ? oauth2_cfg_ropc_clone(NULL, add->ropc)
+			      : oauth2_cfg_ropc_clone(NULL, base->ropc);
 
 	cfg->otx_endpoint = oauth2_strdup(
 	    add->otx_endpoint ? add->otx_endpoint : base->otx_endpoint);
@@ -229,15 +217,8 @@ void oauth2_sts_cfg_free(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 	if (cfg->wstrust_value_type)
 		oauth2_mem_free(cfg->wstrust_value_type);
 
-	if (cfg->ropc_endpoint)
-		oauth2_mem_free(cfg->ropc_endpoint);
-	if (cfg->ropc_endpoint_auth)
-		oauth2_cfg_endpoint_auth_free(cfg->log,
-					      cfg->ropc_endpoint_auth);
-	if (cfg->ropc_client_id)
-		oauth2_mem_free(cfg->ropc_client_id);
-	if (cfg->ropc_username)
-		oauth2_mem_free(cfg->ropc_username);
+	if (cfg->ropc)
+		oauth2_cfg_ropc_free(cfg->log, cfg->ropc);
 
 	if (cfg->otx_endpoint)
 		oauth2_mem_free(cfg->otx_endpoint);
@@ -285,9 +266,9 @@ STS_CFG_SET_TAKE1_IMPL(wstrust_endpoint, str)
 STS_CFG_SET_TAKE1_IMPL(wstrust_applies_to, str)
 STS_CFG_SET_TAKE1_IMPL(wstrust_token_type, str)
 STS_CFG_SET_TAKE1_IMPL(wstrust_value_type, str)
-STS_CFG_SET_TAKE1_IMPL(ropc_endpoint, str)
-STS_CFG_SET_TAKE1_IMPL(ropc_client_id, str)
-STS_CFG_SET_TAKE1_IMPL(ropc_username, str)
+// STS_CFG_SET_TAKE1_IMPL(ropc_endpoint, str)
+// STS_CFG_SET_TAKE1_IMPL(ropc_client_id, str)
+// STS_CFG_SET_TAKE1_IMPL(ropc_username, str)
 STS_CFG_SET_TAKE1_IMPL(otx_endpoint, str)
 STS_CFG_SET_TAKE1_IMPL(otx_client_id, str)
 STS_CFG_SET_TAKE1_IMPL(cache_expiry_s, uint)
@@ -378,11 +359,11 @@ end:
 	return rv;
 }
 
-const char *sts_cfg_set_ropc_endpoint_auth(oauth2_sts_cfg_t *cfg,
-					   const char *type, const char *value)
+const char *sts_cfg_set_ropc(oauth2_sts_cfg_t *cfg, const char *value)
 {
-	return _sts_cfg_set_endpoint_auth(&cfg->ropc_endpoint_auth, type,
-					  value);
+	if (cfg->ropc == NULL)
+		cfg->ropc = oauth2_cfg_ropc_init(cfg->log);
+	return oauth2_cfg_set_ropc_options(cfg->log, cfg->ropc, value);
 }
 
 const char *sts_cfg_set_otx_endpoint_auth(oauth2_sts_cfg_t *cfg,

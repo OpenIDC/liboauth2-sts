@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *
- * Copyright (C) 2018-2019 - ZmartZone Holding BV - www.zmartzone.eu
+ * Copyright (C) 2018-2020 - ZmartZone Holding BV - www.zmartzone.eu
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -45,10 +45,7 @@
 #define STSWSTrustAppliesTo "STSWSTrustAppliesTo"
 #define STSWSTrustTokenType "STSWSTrustTokenType"
 #define STSWSTrustValueType "STSWSTrustValueType"
-#define STSROPCEndpoint "STSROPCEndpoint"
-#define STSROPCEndpointAuth "STSROPCEndpointAuth"
-#define STSROPCClientID "STSROPCClientID"
-#define STSROPCUsername "STSROPCUsername"
+#define STSROPC "STSROPC"
 #define STSOTXEndpoint "STSOTXEndpoint"
 #define STSOTXEndpointAuth "STSOTXEndpointAuth"
 #define STSOTXClientID "STSOTXClientID"
@@ -82,10 +79,7 @@ STS_CFG_SET_TAKE1(wstrust_applies_to)
 STS_CFG_SET_TAKE1(wstrust_token_type)
 STS_CFG_SET_TAKE1(wstrust_value_type)
 
-STS_CFG_SET_TAKE1(ropc_endpoint)
-STS_CFG_SET_TAKE2(ropc_endpoint_auth)
-STS_CFG_SET_TAKE1(ropc_client_id)
-STS_CFG_SET_TAKE1(ropc_username)
+STS_CFG_SET_TAKE1(ropc)
 
 STS_CFG_SET_TAKE1(otx_endpoint)
 STS_CFG_SET_TAKE2(otx_endpoint_auth)

@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *
- * Copyright (C) 2018-2019 - ZmartZone Holding BV - www.zmartzone.eu
+ * Copyright (C) 2018-2020 - ZmartZone Holding BV - www.zmartzone.eu
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -40,10 +40,7 @@ typedef struct oauth2_sts_cfg_t {
 	char *wstrust_token_type;
 	char *wstrust_value_type;
 
-	char *ropc_endpoint;
-	oauth2_cfg_endpoint_auth_t *ropc_endpoint_auth;
-	char *ropc_client_id;
-	char *ropc_username;
+	oauth2_cfg_ropc_t *ropc;
 
 	char *otx_endpoint;
 	oauth2_cfg_endpoint_auth_t *otx_endpoint_auth;
