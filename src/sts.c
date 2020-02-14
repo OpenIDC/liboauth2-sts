@@ -237,7 +237,7 @@ void oauth2_sts_cfg_free(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 	// cfg->pass_target_token_in);
 
 	if (cfg->cache)
-		oauth2_cache_free(NULL, cfg->cache);
+		oauth2_cache_release(NULL, cfg->cache);
 
 	if (cfg->request_parameters)
 		oauth2_nv_list_free(cfg->log, cfg->request_parameters);
@@ -403,11 +403,17 @@ const char *sts_cfg_set_cache(oauth2_sts_cfg_t *cfg, const char *type,
 			      const char *options)
 {
 	const char *rv = NULL;
+	oauth2_nv_list_t *params = NULL;
 
 	if (cfg->cache)
-		oauth2_cache_free(cfg->log, cfg->cache);
+		oauth2_cache_release(cfg->log, cfg->cache);
 
-	cfg->cache = oauth2_cache_init(cfg->log, type, options);
+	if (oauth2_parse_form_encoded_params(cfg->log, "key_hash_algo=none&max_key_size=8", &params) == false) {
+		rv = "parsing cache parameters failed";
+		goto end;
+	}
+
+	cfg->cache = oauth2_cache_init(cfg->log, type, params);
 	if (cfg->cache == NULL) {
 		rv = "oauth2_cache_init failed";
 		goto end;
@@ -419,6 +425,9 @@ const char *sts_cfg_set_cache(oauth2_sts_cfg_t *cfg, const char *type,
 	}
 
 end:
+
+	if (params)
+		oauth2_nv_list_free(cfg->log, params);
 
 	return rv;
 }
