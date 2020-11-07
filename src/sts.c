@@ -408,7 +408,7 @@ const char *sts_cfg_set_cache(oauth2_sts_cfg_t *cfg, const char *type,
 	if (cfg->cache)
 		oauth2_cache_release(cfg->log, cfg->cache);
 
-	if (oauth2_parse_form_encoded_params(cfg->log, "key_hash_algo=none&max_key_size=8", &params) == false) {
+	if (oauth2_parse_form_encoded_params(cfg->log, options, &params) == false) {
 		rv = "parsing cache parameters failed";
 		goto end;
 	}
