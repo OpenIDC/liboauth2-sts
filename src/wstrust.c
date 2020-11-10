@@ -79,12 +79,6 @@ int sts_wstrust_config_check_vhost(oauth2_log_t *log, apr_pool_t *pool,
 	return OK;
 }
 */
-static const char *sts_cfg_wstrust_get_endpoint(oauth2_cfg_sts_t *cfg)
-{
-	if (cfg->wstrust_endpoint == NULL)
-		return STS_WSTRUST_ENDPOINT_DEFAULT;
-	return cfg->wstrust_endpoint;
-}
 
 static const char *sts_cfg_wstrust_get_applies_to(oauth2_cfg_sts_t *cfg)
 {
@@ -414,7 +408,8 @@ bool sts_wstrust_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 	rst = sts_wstrust_get_rst(cfg, token);
 	oauth2_snprintf(
 	    data, STS_WSTRUST_REQ_SIZE_MAX, sts_wstrust_soap_call_template, id1,
-	    created, expires, rst, sts_cfg_wstrust_get_endpoint(cfg),
+	    created, expires, rst,
+	    oauth2_cfg_endpoint_get_url(cfg->wstrust_endpoint),
 	    STS_WSTRUST_ACTION, token_type, STS_WSTRUST_REQUEST_TYPE,
 	    sts_cfg_wstrust_get_applies_to(cfg), STS_WSTRUST_KEY_TYPE);
 
@@ -422,22 +417,27 @@ bool sts_wstrust_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 	if (ctx == NULL)
 		goto end;
 
-	if (oauth2_http_ctx_auth_add(log, ctx, cfg->wstrust_endpoint_auth,
-				     NULL) == false)
+	if (oauth2_http_ctx_auth_add(
+		log, ctx, oauth2_cfg_endpoint_get_auth(cfg->wstrust_endpoint),
+		NULL) == false)
 		goto end;
 
 	oauth2_http_call_ctx_content_type_set(
 	    log, ctx, STS_WSTRUST_CONTENT_TYPE_SOAP_UTF8);
 	oauth2_http_call_ctx_ssl_verify_set(
-	    log, ctx, sts_cfg_get_ssl_validation(cfg) != 0);
-	oauth2_http_call_ctx_timeout_set(log, ctx,
-					 sts_cfg_get_http_timeout(cfg));
+	    log, ctx,
+	    oauth2_cfg_endpoint_get_ssl_verify(cfg->wstrust_endpoint));
+	oauth2_http_call_ctx_timeout_set(
+	    log, ctx,
+	    oauth2_cfg_endpoint_get_http_timeout(cfg->wstrust_endpoint));
 
-	oauth2_http_call_ctx_hdr_set(log, ctx, STS_WSTRUST_HEADER_SOAP_ACTION,
-				     sts_cfg_wstrust_get_endpoint(cfg));
+	oauth2_http_call_ctx_hdr_set(
+	    log, ctx, STS_WSTRUST_HEADER_SOAP_ACTION,
+	    oauth2_cfg_endpoint_get_url(cfg->wstrust_endpoint));
 
-	if (oauth2_http_call(log, sts_cfg_wstrust_get_endpoint(cfg), data, ctx,
-			     &response, status_code) == false)
+	if (oauth2_http_call(log,
+			     oauth2_cfg_endpoint_get_url(cfg->wstrust_endpoint),
+			     data, ctx, &response, status_code) == false)
 		goto end;
 
 	if ((*status_code < 200) || (*status_code >= 300))

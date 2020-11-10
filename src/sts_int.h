@@ -31,22 +31,19 @@ typedef struct oauth2_sts_cfg_t {
 	oauth2_log_t *log;
 
 	oauth2_uint_t type;
-	oauth2_flag_t ssl_validation;
-	oauth2_uint_t http_timeout;
 
-	char *wstrust_endpoint;
-	oauth2_cfg_endpoint_auth_t *wstrust_endpoint_auth;
+	oauth2_cfg_endpoint_t *wstrust_endpoint;
 	char *wstrust_applies_to;
 	char *wstrust_token_type;
 	char *wstrust_value_type;
 
 	oauth2_cfg_ropc_t *ropc;
 
-	char *otx_endpoint;
-	oauth2_cfg_endpoint_auth_t *otx_endpoint_auth;
+	oauth2_cfg_endpoint_t *otx_endpoint;
 	char *otx_client_id;
 
 	oauth2_cache_t *cache;
+	char *cache_name;
 	oauth2_time_t cache_expiry_s;
 
 	oauth2_nv_list_t *request_parameters;
@@ -57,9 +54,6 @@ typedef struct oauth2_sts_cfg_t {
 	char *path;
 
 } oauth2_cfg_sts_t;
-
-oauth2_flag_t sts_cfg_get_ssl_validation(oauth2_cfg_sts_t *cfg);
-oauth2_uint_t sts_cfg_get_http_timeout(oauth2_cfg_sts_t *cfg);
 
 void sts_merge_request_parameters(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 				  oauth2_nv_list_t *params);

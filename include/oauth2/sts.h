@@ -35,24 +35,14 @@
  * configuration
  */
 
-// TODO: do we want to share these names across Apache/NGINX?
-#define STSType "STSType"
-#define STSSSLValidateServer "STSSSLValidateServer"
-#define STSHTTPTimeOut "STSHTTPTimeOut"
-#define STSRequestParameter "STSRequestParameter"
-#define STSWSTrustEndpoint "STSWSTrustEndpoint"
-#define STSWSTrustEndpointAuth "STSWSTrustEndpointAuth"
-#define STSWSTrustAppliesTo "STSWSTrustAppliesTo"
-#define STSWSTrustTokenType "STSWSTrustTokenType"
-#define STSWSTrustValueType "STSWSTrustValueType"
-#define STSROPC "STSROPC"
-#define STSOTXEndpoint "STSOTXEndpoint"
-#define STSOTXEndpointAuth "STSOTXEndpointAuth"
-#define STSOTXClientID "STSOTXClientID"
-#define STSCacheExpiresIn "STSCacheExpiresIn"
+#define STSCache "STSCache"
 #define STSAcceptSourceTokenIn "STSAcceptSourceTokenIn"
 #define STSPassTargetTokenIn "STSPassTargetTokenIn"
-#define STSCache "STSCache"
+#define STSExchange "STSExchange"
+
+// STSExchange <type> <url> <options> (cache.name, cache.expiry, auth,
+// ssl_verify, http_timeout, request.parameter, applies_to, token_type,
+// value_type)
 
 #define STS_TYPE_DISABLED 0
 #define STS_TYPE_WSTRUST 1
@@ -63,37 +53,13 @@ OAUTH2_CFG_TYPE_DECLARE(sts, cfg)
 
 oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path);
 
-#define STS_CFG_SET_FUNC(member, ...)                                          \
-	const char *sts_cfg_set_##member(oauth2_sts_cfg_t *, ##__VA_ARGS__);
-#define STS_CFG_SET_TAKE1(member) STS_CFG_SET_FUNC(member, const char *)
-#define STS_CFG_SET_TAKE2(member)                                              \
-	STS_CFG_SET_FUNC(member, const char *, const char *)
-
-STS_CFG_SET_TAKE1(type)
-STS_CFG_SET_TAKE1(ssl_validation)
-STS_CFG_SET_TAKE1(http_timeout)
-
-STS_CFG_SET_TAKE1(wstrust_endpoint)
-STS_CFG_SET_TAKE2(wstrust_endpoint_auth)
-STS_CFG_SET_TAKE1(wstrust_applies_to)
-STS_CFG_SET_TAKE1(wstrust_token_type)
-STS_CFG_SET_TAKE1(wstrust_value_type)
-
-STS_CFG_SET_TAKE1(ropc)
-
-STS_CFG_SET_TAKE1(otx_endpoint)
-STS_CFG_SET_TAKE2(otx_endpoint_auth)
-STS_CFG_SET_TAKE1(otx_client_id)
-
-STS_CFG_SET_TAKE1(cache_expiry_s)
-STS_CFG_SET_TAKE2(request_parameters)
-STS_CFG_SET_TAKE2(cache)
-
 // TODO: add post_config that checks the setup per protocol
 
 /*
  * main handler
  */
+const char *sts_cfg_set_cache(oauth2_sts_cfg_t *cfg, const char *type,
+			      const char *options);
 const char *sts_cfg_set_accept_source_token_in(oauth2_sts_cfg_t *cfg,
 					       const char *type,
 					       const char *options);
@@ -101,6 +67,9 @@ const char *sts_cfg_set_accept_source_token_in(oauth2_sts_cfg_t *cfg,
 const char *sts_cfg_set_pass_target_token_in(oauth2_sts_cfg_t *cfg,
 					     const char *method,
 					     const char *options);
+
+const char *sts_cfg_set_exchange(oauth2_sts_cfg_t *cfg, const char *type,
+				 const char *url, const char *options);
 
 int sts_cfg_get_type(oauth2_sts_cfg_t *cfg);
 oauth2_cfg_source_token_t *
