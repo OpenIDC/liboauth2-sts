@@ -41,8 +41,6 @@
 
 #define STS_CFG_DEFAULT_TYPE STS_TYPE_DISABLED
 
-#define STS_DEFAULT_ACCEPT_SOURCE_TOKEN_IN                                     \
-	(OAUTH2_CFG_TOKEN_IN_ENVVAR | OAUTH2_CFG_TOKEN_IN_HEADER)
 #define STS_DEFAULT_PASS_TARGET_TOKEN_IN                                       \
 	(OAUTH2_CFG_TOKEN_IN_ENVVAR | OAUTH2_CFG_TOKEN_IN_COOKIE)
 
@@ -71,6 +69,7 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path)
 
 	c->otx_endpoint = NULL;
 	c->otx_client_id = NULL;
+	c->otx_request_parameters = NULL;
 
 	c->cache = NULL;
 	c->cache_name = NULL;
@@ -79,7 +78,6 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path)
 	c->accept_source_token_in = NULL;
 	c->pass_target_token_in.value = 0;
 
-	c->request_parameters = NULL;
 	c->path = oauth2_strdup(path);
 
 	return c;
@@ -113,6 +111,10 @@ void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	cfg->otx_client_id =
 	    oauth2_strdup(add->otx_client_id != NULL ? add->otx_client_id
 						     : base->otx_client_id);
+	cfg->otx_request_parameters =
+	    oauth2_nv_list_clone(cfg->log, add->otx_request_parameters != NULL
+					       ? add->otx_request_parameters
+					       : base->otx_request_parameters);
 
 	cfg->cache = add->cache ? add->cache : base->cache;
 	cfg->cache_name =
@@ -162,10 +164,6 @@ void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 		    oauth2_strdup(base->pass_target_token_in.header.type);
 	}
 
-	cfg->request_parameters =
-	    oauth2_nv_list_clone(cfg->log, add->request_parameters != NULL
-					       ? add->request_parameters
-					       : base->request_parameters);
 	cfg->path = oauth2_strdup(add->path != NULL ? add->path : base->path);
 
 	oauth2_debug(log, "merged: %p->%p", base, add);
@@ -189,6 +187,8 @@ void oauth2_sts_cfg_free(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 		oauth2_cfg_endpoint_free(log, cfg->otx_endpoint);
 	if (cfg->otx_client_id)
 		oauth2_mem_free(cfg->otx_client_id);
+	if (cfg->otx_request_parameters)
+		oauth2_nv_list_free(cfg->log, cfg->otx_request_parameters);
 
 	if (cfg->accept_source_token_in)
 		oauth2_cfg_source_token_free(NULL, cfg->accept_source_token_in);
@@ -202,8 +202,6 @@ void oauth2_sts_cfg_free(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 	if (cfg->cache_name)
 		oauth2_mem_free(cfg->cache_name);
 
-	if (cfg->request_parameters)
-		oauth2_nv_list_free(cfg->log, cfg->request_parameters);
 	if (cfg->path)
 		oauth2_mem_free(cfg->path);
 
@@ -240,15 +238,6 @@ int sts_cfg_get_type(oauth2_sts_cfg_t *cfg)
 		return STS_CFG_DEFAULT_TYPE;
 	}
 	return cfg->type;
-}
-
-const char *sts_cfg_set_request_parameters(oauth2_sts_cfg_t *cfg,
-					   const char *name, const char *value)
-{
-	if (cfg->request_parameters == NULL)
-		cfg->request_parameters = oauth2_nv_list_init(NULL);
-	oauth2_nv_list_add(NULL, cfg->request_parameters, name, value);
-	return NULL;
 }
 
 static oauth2_cache_t *sts_cfg_get_cache(oauth2_log_t *log,
@@ -289,28 +278,15 @@ const char *sts_cfg_set_exchange(oauth2_sts_cfg_t *cfg, const char *type,
 		goto end;
 	}
 
-	switch (cfg->type) {
+	switch (sts_cfg_get_type(cfg)) {
 	case STS_TYPE_ROPC:
-		cfg->ropc = oauth2_cfg_ropc_init(cfg->log);
-		rv = oauth2_cfg_set_ropc(cfg->log, cfg->ropc, url, options);
+		rv = sts_cfg_set_ropc(cfg, url, options);
 		break;
 	case STS_TYPE_OTX:
-		cfg->otx_endpoint = oauth2_cfg_endpoint_init(cfg->log);
-		rv = oauth2_cfg_set_endpoint(cfg->log, cfg->otx_endpoint, url,
-					     params, NULL);
-		cfg->otx_client_id = oauth2_strdup(
-		    oauth2_nv_list_get(cfg->log, params, "client_id"));
+		rv = sts_cfg_set_otx(cfg, url, params);
 		break;
 	case STS_TYPE_WSTRUST:
-		cfg->wstrust_endpoint = oauth2_cfg_endpoint_init(cfg->log);
-		rv = oauth2_cfg_set_endpoint(cfg->log, cfg->wstrust_endpoint,
-					     url, params, NULL);
-		cfg->wstrust_applies_to = oauth2_strdup(
-		    oauth2_nv_list_get(cfg->log, params, "applies_to"));
-		cfg->wstrust_token_type = oauth2_strdup(
-		    oauth2_nv_list_get(cfg->log, params, "token_type"));
-		cfg->wstrust_value_type = oauth2_strdup(
-		    oauth2_nv_list_get(cfg->log, params, "value_type"));
+		rv = sts_cfg_set_wstrust(cfg, url, params);
 		break;
 	case STS_TYPE_DISABLED:
 	default:
@@ -588,11 +564,12 @@ static bool _sts_request_param_add(oauth2_log_t *log, void *rec,
 }
 
 void sts_merge_request_parameters(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
-				  oauth2_nv_list_t *params)
+				  oauth2_nv_list_t *source,
+				  oauth2_nv_list_t *target)
 {
-	if (cfg->request_parameters) {
-		oauth2_nv_list_loop(log, cfg->request_parameters,
-				    _sts_request_param_add, params);
+	if (source) {
+		oauth2_nv_list_loop(log, source, _sts_request_param_add,
+				    target);
 	}
 }
 

@@ -41,12 +41,11 @@ typedef struct oauth2_sts_cfg_t {
 
 	oauth2_cfg_endpoint_t *otx_endpoint;
 	char *otx_client_id;
+	oauth2_nv_list_t *otx_request_parameters;
 
 	oauth2_cache_t *cache;
 	char *cache_name;
 	oauth2_time_t cache_expiry_s;
-
-	oauth2_nv_list_t *request_parameters;
 
 	oauth2_cfg_source_token_t *accept_source_token_in;
 	oauth2_cfg_token_in_t pass_target_token_in;
@@ -55,8 +54,9 @@ typedef struct oauth2_sts_cfg_t {
 
 } oauth2_cfg_sts_t;
 
-void sts_merge_request_parameters(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
-				  oauth2_nv_list_t *params);
+void sts_merge_request_parameters(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
+				  oauth2_nv_list_t *source,
+				  oauth2_nv_list_t *target);
 
 bool sts_util_oauth_call(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 			 oauth2_http_call_ctx_t *ctx,
@@ -64,11 +64,19 @@ bool sts_util_oauth_call(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 			 const oauth2_nv_list_t *params, char **rtoken,
 			 oauth2_uint_t *status_code);
 
+const char *sts_cfg_set_wstrust(oauth2_sts_cfg_t *cfg, const char *url,
+				const oauth2_nv_list_t *params);
 bool sts_wstrust_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg,
 		      const char *token, char **rtoken,
 		      oauth2_uint_t *status_code);
+
+const char *sts_cfg_set_ropc(oauth2_sts_cfg_t *cfg, const char *url,
+			     const char *options);
 bool sts_ropc_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
 		   const char *user, char **rtoken, oauth2_uint_t *status_code);
+
+const char *sts_cfg_set_otx(oauth2_sts_cfg_t *cfg, const char *url,
+			    const oauth2_nv_list_t *params);
 bool sts_otx_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
 		  char **rtoken, oauth2_uint_t *status_code);
 

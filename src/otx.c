@@ -24,9 +24,6 @@
 
 #include "sts_int.h"
 
-//#define STS_OTX_ENDPOINT_DEFAULT "https://localhost:9031/as/token.oauth2"
-#define STS_OTX_ENDPOINT_DEFAULT NULL
-#define STS_OTX_ENDPOINT_AUTH_DEFAULT STS_ENDPOINT_AUTH_NONE
 #define STS_OTX_CLIENT_ID_DEFAULT NULL
 
 #define STS_OTX_GRANT_TYPE_NAME "grant_type"
@@ -36,19 +33,30 @@
 #define STS_OTX_SUBJECT_TOKEN_TYPE_NAME "subject_token_type"
 #define STS_OTX_SUBJECT_TOKEN_TYPE_VALUE                                       \
 	"urn:ietf:params:oauth:token-type:access_token"
-#define STS_OTX_ACCESS_TOKEN "access_token"
-/*
-int sts_otx_config_check_vhost(oauth2_log_t *log, apr_pool_t *pool, server_rec
-*s, sts_server_config *cfg)
+
+const char *sts_cfg_set_otx(oauth2_sts_cfg_t *cfg, const char *url,
+			    const oauth2_nv_list_t *params)
 {
+	char *rv = NULL;
+
+	cfg->otx_endpoint = oauth2_cfg_endpoint_init(cfg->log);
 	if (cfg->otx_endpoint == NULL) {
-		oauth2_error(log, STSOTXEndpoint
-			  " must be set in OAuth 2.0 Token Exchange mode");
-		return HTTP_INTERNAL_SERVER_ERROR;
+		rv = oauth2_strdup("oauth2_cfg_endpoint_init failed");
+		goto end;
 	}
-	return OK;
+
+	rv = oauth2_cfg_set_endpoint(cfg->log, cfg->otx_endpoint, url, params,
+				     NULL);
+	if (rv != NULL)
+		goto end;
+
+	cfg->otx_client_id =
+	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "client_id"));
+
+end:
+
+	return rv;
 }
-*/
 
 static const char *sts_otx_get_client_id(oauth2_cfg_sts_t *cfg)
 {
@@ -79,8 +87,9 @@ bool sts_otx_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
 	    (client_id != NULL))
 		oauth2_nv_list_add(log, params, OAUTH2_CLIENT_ID, client_id);
 
-	if (cfg->request_parameters)
-		sts_merge_request_parameters(log, cfg, params);
+	if (cfg->otx_request_parameters)
+		sts_merge_request_parameters(
+		    log, cfg, cfg->otx_request_parameters, params);
 	else
 		oauth2_nv_list_add(log, params, STS_OTX_SUBJECT_TOKEN_TYPE_NAME,
 				   STS_OTX_SUBJECT_TOKEN_TYPE_VALUE);

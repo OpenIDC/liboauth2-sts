@@ -26,21 +26,23 @@
 
 #include "sts_int.h"
 
-/*
-int sts_ropc_config_check_vhost(oauth2_log_t *log, apr_pool_t *pool, server_rec
-*s, sts_config *cfg)
+const char *sts_cfg_set_ropc(oauth2_sts_cfg_t *cfg, const char *url,
+			     const char *options)
 {
-	if (cfg->ropc_endpoint == NULL) {
-		oauth2_error(log, STSROPCEndpoint " must be set in ROPC mode");
-		return HTTP_INTERNAL_SERVER_ERROR;
+	char *rv = NULL;
+
+	cfg->ropc = oauth2_cfg_ropc_init(cfg->log);
+	if (cfg->ropc == NULL) {
+		rv = oauth2_strdup("oauth2_cfg_ropc_init failed");
+		goto end;
 	}
-	if (cfg->ropc_client_id == NULL) {
-		oauth2_error(log, STSROPCClientID " must be set in ROPC mode");
-		return HTTP_INTERNAL_SERVER_ERROR;
-	}
-	return OK;
+
+	rv = oauth2_cfg_set_ropc(cfg->log, cfg->ropc, url, options);
+
+end:
+
+	return rv;
 }
-*/
 
 static const char *sts_ropc_get_username(oauth2_cfg_sts_t *cfg,
 					 const char *user)

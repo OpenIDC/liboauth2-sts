@@ -41,8 +41,6 @@
 	"http://docs.oasis-open.org/wss/"                                      \
 	"oasis-wss-saml-token-profile-1.1#SAMLV1.1"
 
-#define STS_WSTRUST_ENDPOINT_DEFAULT NULL
-#define STS_WSTRUST_ENDPOINT_AUTH_DEFAULT STS_ENDPOINT_AUTH_NONE
 #define STS_WSTRUST_APPLIES_TO_DEFAULT NULL
 #define STS_WSTRUST_TOKEN_TYPE_DEFAULT STS_WSTRUST_TOKEN_TYPE_SAML20
 #define STS_WSTRUST_VALUE_TYPE_DEFAULT NULL
@@ -62,23 +60,34 @@
 #define STS_WSTRUST_ACTION STS_WSTRUST_XML_WSTRUST_NS "/RST/Issue"
 #define STS_WSTRUST_REQUEST_TYPE STS_WSTRUST_XML_WSTRUST_NS "/Issue"
 #define STS_WSTRUST_KEY_TYPE STS_WSTRUST_XML_WSTRUST_NS "/SymmetricKey"
-/*
-int sts_wstrust_config_check_vhost(oauth2_log_t *log, apr_pool_t *pool,
-				   server_rec *s, oauth2_cfg_sts_t *cfg)
+
+const char *sts_cfg_set_wstrust(oauth2_sts_cfg_t *cfg, const char *url,
+				const oauth2_nv_list_t *params)
 {
+	char *rv = NULL;
+
+	cfg->wstrust_endpoint = oauth2_cfg_endpoint_init(cfg->log);
 	if (cfg->wstrust_endpoint == NULL) {
-		oauth2_error(log, STSWSTrustEndpoint
-			     " must be set in WS-Trust mode");
-		return HTTP_INTERNAL_SERVER_ERROR;
+		rv = oauth2_strdup("oauth2_cfg_endpoint_init failed");
+		goto end;
 	}
-	if (cfg->wstrust_applies_to == NULL) {
-		oauth2_error(log, STSWSTrustAppliesTo
-			     " must be set in WS-Trust mode");
-		return HTTP_INTERNAL_SERVER_ERROR;
-	}
-	return OK;
+
+	rv = oauth2_cfg_set_endpoint(cfg->log, cfg->wstrust_endpoint, url,
+				     params, NULL);
+	if (rv != NULL)
+		goto end;
+
+	cfg->wstrust_applies_to =
+	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "applies_to"));
+	cfg->wstrust_token_type =
+	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "token_type"));
+	cfg->wstrust_value_type =
+	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "value_type"));
+
+end:
+
+	return rv;
 }
-*/
 
 static const char *sts_cfg_wstrust_get_applies_to(oauth2_cfg_sts_t *cfg)
 {
