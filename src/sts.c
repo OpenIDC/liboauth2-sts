@@ -298,23 +298,30 @@ const char *sts_cfg_set_exchange(oauth2_sts_cfg_t *cfg, const char *type,
 		cfg->otx_endpoint = oauth2_cfg_endpoint_init(cfg->log);
 		rv = oauth2_cfg_set_endpoint(cfg->log, cfg->otx_endpoint, url,
 					     params, NULL);
-		cfg->otx_client_id = oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "client_id"));
+		cfg->otx_client_id = oauth2_strdup(
+		    oauth2_nv_list_get(cfg->log, params, "client_id"));
 		break;
 	case STS_TYPE_WSTRUST:
 		cfg->wstrust_endpoint = oauth2_cfg_endpoint_init(cfg->log);
 		rv = oauth2_cfg_set_endpoint(cfg->log, cfg->wstrust_endpoint,
 					     url, params, NULL);
-		cfg->wstrust_applies_to = oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "applies_to"));
-		cfg->wstrust_token_type = oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "token_type"));
-		cfg->wstrust_value_type = oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "value_type"));
+		cfg->wstrust_applies_to = oauth2_strdup(
+		    oauth2_nv_list_get(cfg->log, params, "applies_to"));
+		cfg->wstrust_token_type = oauth2_strdup(
+		    oauth2_nv_list_get(cfg->log, params, "token_type"));
+		cfg->wstrust_value_type = oauth2_strdup(
+		    oauth2_nv_list_get(cfg->log, params, "value_type"));
 		break;
 	case STS_TYPE_DISABLED:
 	default:
 		break;
 	}
 
-	cfg->cache_name = oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "cache.name"));
-	oauth2_cfg_set_uint_slot(cfg, offsetof(oauth2_sts_cfg_t, cache_expiry_s), oauth2_nv_list_get(cfg->log, params, "cache.expiry"));
+	cfg->cache_name =
+	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "cache.name"));
+	oauth2_cfg_set_uint_slot(
+	    cfg, offsetof(oauth2_sts_cfg_t, cache_expiry_s),
+	    oauth2_nv_list_get(cfg->log, params, "cache.expiry"));
 
 end:
 
