@@ -39,6 +39,7 @@
 #define STSAcceptSourceTokenIn "STSAcceptSourceTokenIn"
 #define STSPassTargetTokenIn "STSPassTargetTokenIn"
 #define STSExchange "STSExchange"
+#define STSCryptoPassphrase "STSCryptoPassphrase"
 
 // STSExchange <type> <url> <options> (cache.name, cache.expiry, auth,
 // ssl_verify, http_timeout, request.parameter, applies_to, token_type,
@@ -70,6 +71,8 @@ const char *sts_cfg_set_pass_target_token_in(oauth2_sts_cfg_t *cfg,
 
 const char *sts_cfg_set_exchange(oauth2_sts_cfg_t *cfg, const char *type,
 				 const char *url, const char *options);
+const char *sts_cfg_set_passphrase(oauth2_sts_cfg_t *cfg,
+				   const char *passphrase);
 
 int sts_cfg_get_type(oauth2_sts_cfg_t *cfg);
 oauth2_cfg_source_token_t *

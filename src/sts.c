@@ -213,6 +213,12 @@ void oauth2_sts_cfg_free(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 	oauth2_mem_free(cfg);
 }
 
+const char *sts_cfg_set_passphrase(oauth2_sts_cfg_t *cfg,
+				   const char *passphrase)
+{
+	return oauth2_crypto_passphrase_set(cfg->log, passphrase);
+}
+
 static const char *sts_cfg_set_type(oauth2_sts_cfg_t *cfg, const char *value)
 {
 	const char *rv = NULL;
