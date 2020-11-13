@@ -50,6 +50,11 @@ const char *sts_cfg_set_otx(oauth2_sts_cfg_t *cfg, const char *url,
 	if (rv != NULL)
 		goto end;
 
+	if (oauth2_parse_form_encoded_params(
+		cfg->log, oauth2_nv_list_get(cfg->log, params, "params"),
+		&cfg->otx_request_parameters) == false)
+		goto end;
+
 	cfg->otx_client_id =
 	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "client_id"));
 
@@ -88,8 +93,8 @@ bool sts_otx_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
 		oauth2_nv_list_add(log, params, OAUTH2_CLIENT_ID, client_id);
 
 	if (cfg->otx_request_parameters)
-		sts_merge_request_parameters(
-		    log, cfg, cfg->otx_request_parameters, params);
+		oauth2_nv_list_merge_into(log, cfg->otx_request_parameters,
+					  params);
 	else
 		oauth2_nv_list_add(log, params, STS_OTX_SUBJECT_TOKEN_TYPE_NAME,
 				   STS_OTX_SUBJECT_TOKEN_TYPE_VALUE);

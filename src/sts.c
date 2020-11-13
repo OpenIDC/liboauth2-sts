@@ -561,24 +561,6 @@ end:
 	return rc;
 }
 
-static bool _sts_request_param_add(oauth2_log_t *log, void *rec,
-				   const char *key, const char *value)
-{
-	oauth2_nv_list_t *params = (oauth2_nv_list_t *)rec;
-	oauth2_nv_list_add(log, params, key, value);
-	return true;
-}
-
-void sts_merge_request_parameters(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
-				  oauth2_nv_list_t *source,
-				  oauth2_nv_list_t *target)
-{
-	if (source) {
-		oauth2_nv_list_loop(log, source, _sts_request_param_add,
-				    target);
-	}
-}
-
 bool sts_util_oauth_call(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 			 oauth2_http_call_ctx_t *ctx,
 			 const char *token_endpoint,
