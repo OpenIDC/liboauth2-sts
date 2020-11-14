@@ -34,29 +34,28 @@
 #define STS_OTX_SUBJECT_TOKEN_TYPE_VALUE                                       \
 	"urn:ietf:params:oauth:token-type:access_token"
 
-const char *sts_cfg_set_otx(oauth2_sts_cfg_t *cfg, const char *url,
-			    const oauth2_nv_list_t *params)
+const char *sts_cfg_set_otx(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
+			    const char *url, const oauth2_nv_list_t *params)
 {
 	char *rv = NULL;
 
-	cfg->otx_endpoint = oauth2_cfg_endpoint_init(cfg->log);
+	cfg->otx_endpoint = oauth2_cfg_endpoint_init(log);
 	if (cfg->otx_endpoint == NULL) {
 		rv = oauth2_strdup("oauth2_cfg_endpoint_init failed");
 		goto end;
 	}
 
-	rv = oauth2_cfg_set_endpoint(cfg->log, cfg->otx_endpoint, url, params,
-				     NULL);
+	rv = oauth2_cfg_set_endpoint(log, cfg->otx_endpoint, url, params, NULL);
 	if (rv != NULL)
 		goto end;
 
 	if (oauth2_parse_form_encoded_params(
-		cfg->log, oauth2_nv_list_get(cfg->log, params, "params"),
+		log, oauth2_nv_list_get(log, params, "params"),
 		&cfg->otx_request_parameters) == false)
 		goto end;
 
 	cfg->otx_client_id =
-	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "client_id"));
+	    oauth2_strdup(oauth2_nv_list_get(log, params, "client_id"));
 
 end:
 

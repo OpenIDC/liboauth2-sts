@@ -59,20 +59,19 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path);
 /*
  * main handler
  */
-const char *sts_cfg_set_cache(oauth2_sts_cfg_t *cfg, const char *type,
-			      const char *options);
-const char *sts_cfg_set_accept_source_token_in(oauth2_sts_cfg_t *cfg,
+const char *sts_cfg_set_accept_source_token_in(oauth2_log_t *log,
+					       oauth2_sts_cfg_t *cfg,
 					       const char *type,
 					       const char *options);
 
-const char *sts_cfg_set_pass_target_token_in(oauth2_sts_cfg_t *cfg,
+const char *sts_cfg_set_pass_target_token_in(oauth2_log_t *log,
+					     oauth2_sts_cfg_t *cfg,
 					     const char *method,
 					     const char *options);
 
-const char *sts_cfg_set_exchange(oauth2_sts_cfg_t *cfg, const char *type,
-				 const char *url, const char *options);
-const char *sts_cfg_set_passphrase(oauth2_sts_cfg_t *cfg,
-				   const char *passphrase);
+const char *sts_cfg_set_exchange(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
+				 const char *type, const char *url,
+				 const char *options);
 
 int sts_cfg_get_type(oauth2_sts_cfg_t *cfg);
 oauth2_cfg_source_token_t *

@@ -61,28 +61,28 @@
 #define STS_WSTRUST_REQUEST_TYPE STS_WSTRUST_XML_WSTRUST_NS "/Issue"
 #define STS_WSTRUST_KEY_TYPE STS_WSTRUST_XML_WSTRUST_NS "/SymmetricKey"
 
-const char *sts_cfg_set_wstrust(oauth2_sts_cfg_t *cfg, const char *url,
-				const oauth2_nv_list_t *params)
+const char *sts_cfg_set_wstrust(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
+				const char *url, const oauth2_nv_list_t *params)
 {
 	char *rv = NULL;
 
-	cfg->wstrust_endpoint = oauth2_cfg_endpoint_init(cfg->log);
+	cfg->wstrust_endpoint = oauth2_cfg_endpoint_init(log);
 	if (cfg->wstrust_endpoint == NULL) {
 		rv = oauth2_strdup("oauth2_cfg_endpoint_init failed");
 		goto end;
 	}
 
-	rv = oauth2_cfg_set_endpoint(cfg->log, cfg->wstrust_endpoint, url,
-				     params, NULL);
+	rv = oauth2_cfg_set_endpoint(log, cfg->wstrust_endpoint, url, params,
+				     NULL);
 	if (rv != NULL)
 		goto end;
 
 	cfg->wstrust_applies_to =
-	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "applies_to"));
+	    oauth2_strdup(oauth2_nv_list_get(log, params, "applies_to"));
 	cfg->wstrust_token_type =
-	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "token_type"));
+	    oauth2_strdup(oauth2_nv_list_get(log, params, "token_type"));
 	cfg->wstrust_value_type =
-	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "value_type"));
+	    oauth2_strdup(oauth2_nv_list_get(log, params, "value_type"));
 
 end:
 

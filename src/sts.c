@@ -55,8 +55,6 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path)
 {
 	oauth2_sts_cfg_t *c = oauth2_mem_alloc(sizeof(oauth2_sts_cfg_t));
 
-	c->log = log;
-
 	c->type = OAUTH2_CFG_UINT_UNSET;
 
 	c->wstrust_endpoint = NULL;
@@ -86,8 +84,6 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path)
 void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 			  oauth2_sts_cfg_t *base, oauth2_sts_cfg_t *add)
 {
-	cfg->log = log;
-
 	cfg->type = add->type != OAUTH2_CFG_UINT_UNSET ? add->type : base->type;
 
 	cfg->wstrust_endpoint = oauth2_cfg_endpoint_clone(
@@ -103,8 +99,8 @@ void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	    oauth2_strdup(add->wstrust_value_type ? add->wstrust_value_type
 						  : base->wstrust_value_type);
 
-	cfg->ropc = add->ropc ? oauth2_cfg_ropc_clone(NULL, add->ropc)
-			      : oauth2_cfg_ropc_clone(NULL, base->ropc);
+	cfg->ropc = add->ropc ? oauth2_cfg_ropc_clone(log, add->ropc)
+			      : oauth2_cfg_ropc_clone(log, base->ropc);
 
 	cfg->otx_endpoint = oauth2_cfg_endpoint_clone(
 	    NULL, add->otx_endpoint ? add->otx_endpoint : base->otx_endpoint);
@@ -112,9 +108,9 @@ void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	    oauth2_strdup(add->otx_client_id != NULL ? add->otx_client_id
 						     : base->otx_client_id);
 	cfg->otx_request_parameters =
-	    oauth2_nv_list_clone(cfg->log, add->otx_request_parameters != NULL
-					       ? add->otx_request_parameters
-					       : base->otx_request_parameters);
+	    oauth2_nv_list_clone(log, add->otx_request_parameters != NULL
+					  ? add->otx_request_parameters
+					  : base->otx_request_parameters);
 
 	cfg->cache = add->cache ? add->cache : base->cache;
 	cfg->cache_name =
@@ -181,17 +177,17 @@ void oauth2_sts_cfg_free(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 		oauth2_mem_free(cfg->wstrust_value_type);
 
 	if (cfg->ropc)
-		oauth2_cfg_ropc_free(cfg->log, cfg->ropc);
+		oauth2_cfg_ropc_free(log, cfg->ropc);
 
 	if (cfg->otx_endpoint)
 		oauth2_cfg_endpoint_free(log, cfg->otx_endpoint);
 	if (cfg->otx_client_id)
 		oauth2_mem_free(cfg->otx_client_id);
 	if (cfg->otx_request_parameters)
-		oauth2_nv_list_free(cfg->log, cfg->otx_request_parameters);
+		oauth2_nv_list_free(log, cfg->otx_request_parameters);
 
 	if (cfg->accept_source_token_in)
-		oauth2_cfg_source_token_free(NULL, cfg->accept_source_token_in);
+		oauth2_cfg_source_token_free(log, cfg->accept_source_token_in);
 	/*
 	 * TODO: free
 	 */
@@ -205,18 +201,9 @@ void oauth2_sts_cfg_free(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 	if (cfg->path)
 		oauth2_mem_free(cfg->path);
 
-	oauth2_debug(cfg->log, "freed: %p", cfg);
-
-	if (cfg->log)
-		oauth2_log_free(cfg->log);
+	oauth2_debug(log, "freed: %p", cfg);
 
 	oauth2_mem_free(cfg);
-}
-
-const char *sts_cfg_set_passphrase(oauth2_sts_cfg_t *cfg,
-				   const char *passphrase)
-{
-	return oauth2_crypto_passphrase_set(cfg->log, passphrase);
 }
 
 static const char *sts_cfg_set_type(oauth2_sts_cfg_t *cfg, const char *value)
@@ -263,14 +250,9 @@ static oauth2_time_t sts_cfg_get_cache_expiry(oauth2_sts_cfg_t *cfg)
 	return cfg->cache_expiry_s;
 }
 
-const char *sts_cfg_set_cache(oauth2_sts_cfg_t *cfg, const char *type,
-			      const char *options)
-{
-	return oauth2_cfg_set_cache(cfg->log, type, options);
-}
-
-const char *sts_cfg_set_exchange(oauth2_sts_cfg_t *cfg, const char *type,
-				 const char *url, const char *options)
+const char *sts_cfg_set_exchange(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
+				 const char *type, const char *url,
+				 const char *options)
 {
 	const char *rv = NULL;
 	oauth2_nv_list_t *params = NULL;
@@ -279,20 +261,20 @@ const char *sts_cfg_set_exchange(oauth2_sts_cfg_t *cfg, const char *type,
 	if (rv != NULL)
 		goto end;
 
-	if (oauth2_parse_form_encoded_params(NULL, options, &params) == false) {
+	if (oauth2_parse_form_encoded_params(log, options, &params) == false) {
 		rv = strdup("oauth2_parse_form_encoded_params failed");
 		goto end;
 	}
 
 	switch (sts_cfg_get_type(cfg)) {
 	case STS_TYPE_ROPC:
-		rv = sts_cfg_set_ropc(cfg, url, options);
+		rv = sts_cfg_set_ropc(log, cfg, url, options);
 		break;
 	case STS_TYPE_OTX:
-		rv = sts_cfg_set_otx(cfg, url, params);
+		rv = sts_cfg_set_otx(log, cfg, url, params);
 		break;
 	case STS_TYPE_WSTRUST:
-		rv = sts_cfg_set_wstrust(cfg, url, params);
+		rv = sts_cfg_set_wstrust(log, cfg, url, params);
 		break;
 	case STS_TYPE_DISABLED:
 	default:
@@ -300,10 +282,10 @@ const char *sts_cfg_set_exchange(oauth2_sts_cfg_t *cfg, const char *type,
 	}
 
 	cfg->cache_name =
-	    oauth2_strdup(oauth2_nv_list_get(cfg->log, params, "cache.name"));
+	    oauth2_strdup(oauth2_nv_list_get(log, params, "cache.name"));
 	oauth2_cfg_set_uint_slot(
 	    cfg, offsetof(oauth2_sts_cfg_t, cache_expiry_s),
-	    oauth2_nv_list_get(cfg->log, params, "cache.expiry"));
+	    oauth2_nv_list_get(log, params, "cache.expiry"));
 
 end:
 
@@ -313,18 +295,19 @@ end:
 	return rv;
 }
 
-const char *sts_cfg_set_accept_source_token_in(oauth2_sts_cfg_t *cfg,
+const char *sts_cfg_set_accept_source_token_in(oauth2_log_t *log,
+					       oauth2_sts_cfg_t *cfg,
 					       const char *type,
 					       const char *options)
 {
 	if (cfg->accept_source_token_in == NULL)
-		cfg->accept_source_token_in =
-		    oauth2_cfg_source_token_init(NULL);
+		cfg->accept_source_token_in = oauth2_cfg_source_token_init(log);
 	return oauth2_cfg_source_token_set_accept_in(
-	    NULL, cfg->accept_source_token_in, type, options);
+	    log, cfg->accept_source_token_in, type, options);
 }
 
-const char *sts_cfg_set_pass_target_token_in(oauth2_sts_cfg_t *cfg,
+const char *sts_cfg_set_pass_target_token_in(oauth2_log_t *log,
+					     oauth2_sts_cfg_t *cfg,
 					     const char *method,
 					     const char *options)
 {
@@ -341,18 +324,18 @@ const char *sts_cfg_set_pass_target_token_in(oauth2_sts_cfg_t *cfg,
 		goto end;
 	}
 
-	if (oauth2_parse_form_encoded_params(NULL, options, &params) == false) {
+	if (oauth2_parse_form_encoded_params(log, options, &params) == false) {
 		rv = strdup("oauth2_parse_form_encoded_params failed");
 		goto end;
 	}
 
-	rv = oauth2_cfg_token_in_set(NULL, &cfg->pass_target_token_in, method,
+	rv = oauth2_cfg_token_in_set(log, &cfg->pass_target_token_in, method,
 				     params, allowed);
 
 end:
 
 	if (params)
-		oauth2_nv_list_free(NULL, params);
+		oauth2_nv_list_free(log, params);
 
 	oauth2_debug(NULL, "leave: %s", rv);
 

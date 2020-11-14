@@ -26,18 +26,18 @@
 
 #include "sts_int.h"
 
-const char *sts_cfg_set_ropc(oauth2_sts_cfg_t *cfg, const char *url,
-			     const char *options)
+const char *sts_cfg_set_ropc(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
+			     const char *url, const char *options)
 {
 	char *rv = NULL;
 
-	cfg->ropc = oauth2_cfg_ropc_init(cfg->log);
+	cfg->ropc = oauth2_cfg_ropc_init(log);
 	if (cfg->ropc == NULL) {
 		rv = oauth2_strdup("oauth2_cfg_ropc_init failed");
 		goto end;
 	}
 
-	rv = oauth2_cfg_set_ropc(cfg->log, cfg->ropc, url, options);
+	rv = oauth2_cfg_set_ropc(log, cfg->ropc, url, options);
 
 end:
 
