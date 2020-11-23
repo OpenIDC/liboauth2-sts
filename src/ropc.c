@@ -65,8 +65,6 @@ end:
 bool sts_ropc_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
 		   const char *user, char **rtoken, oauth2_uint_t *status_code)
 {
-	// TODO:
-	// sts_merge_request_parameters(log, cfg, params);
 	return oauth2_ropc_exec(log, cfg->ropc,
 				sts_ropc_get_username(cfg, user), token, rtoken,
 				status_code);
