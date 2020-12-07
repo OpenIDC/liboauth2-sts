@@ -351,6 +351,8 @@ char sts_get_pass_target_token_in(oauth2_sts_cfg_t *cfg)
 
 const char *sts_get_pass_target_token_in_hdr_name(oauth2_sts_cfg_t *cfg)
 {
+	if (cfg->pass_target_token_in.header.name == NULL)
+		return STS_TARGET_TOKEN_HEADER_NAME_DEFAULT;
 	return cfg->pass_target_token_in.header.name;
 }
 
