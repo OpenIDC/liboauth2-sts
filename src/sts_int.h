@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *
- * Copyright (C) 2018-2020 - ZmartZone Holding BV - www.zmartzone.eu
+ * Copyright (C) 2018-2021 - ZmartZone Holding BV - www.zmartzone.eu
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,6 +26,11 @@
 #include <oauth2/cfg.h>
 #include <oauth2/http.h>
 
+typedef enum oauth2_sts_cfg_on_error_t {
+	OAUTH2_STS_ON_ERROR_RETURN,
+	OAUTH2_STS_PASS
+} oauth2_sts_cfg_on_error_t;
+
 typedef struct oauth2_sts_cfg_t {
 
 	oauth2_uint_t type;
@@ -47,6 +52,8 @@ typedef struct oauth2_sts_cfg_t {
 
 	oauth2_cfg_source_token_t *accept_source_token_in;
 	oauth2_cfg_token_in_t pass_target_token_in;
+
+	oauth2_sts_cfg_on_error_t on_error;
 
 	char *path;
 

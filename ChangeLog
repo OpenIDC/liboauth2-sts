@@ -1,8 +1,11 @@
-11/07/1010
+07/02/2021
+- add option to not return an error on token missing/exchange failure
+
+11/07/2020
 - depend on liboauth2 >= 1.4.0
 - fix parsing of cache parameters (hardcoded leftover "max_key_size=8")
 
-e02/14/2020
+02/14/2020
 - depend on liboauth 1.2.4 with named cache
 
 02/05/2020

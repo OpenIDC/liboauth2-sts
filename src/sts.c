@@ -1,6 +1,6 @@
 /***************************************************************************
  *
- * Copyright (C) 2018-2020 - ZmartZone Holding BV - www.zmartzone.eu
+ * Copyright (C) 2018-2021 - ZmartZone Holding BV - www.zmartzone.eu
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -75,6 +75,8 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path)
 
 	c->accept_source_token_in = NULL;
 	c->pass_target_token_in.value = 0;
+
+	c->on_error = OAUTH2_CFG_UINT_UNSET;
 
 	c->path = oauth2_strdup(path);
 
@@ -159,6 +161,9 @@ void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 		cfg->pass_target_token_in.header.type =
 		    oauth2_strdup(base->pass_target_token_in.header.type);
 	}
+
+	cfg->on_error = add->on_error != OAUTH2_CFG_UINT_UNSET ? add->on_error
+							       : base->on_error;
 
 	cfg->path = oauth2_strdup(add->path != NULL ? add->path : base->path);
 
@@ -250,6 +255,33 @@ static oauth2_time_t sts_cfg_get_cache_expiry(oauth2_sts_cfg_t *cfg)
 	return cfg->cache_expiry_s;
 }
 
+#define OAUTH_STS_ON_ERROR_RETURN_STR "return"
+#define OAUTH_STS_ON_ERROR_PASS_STR "pass"
+
+static const char *sts_cfg_set_on_error(oauth2_sts_cfg_t *cfg,
+					const char *value)
+{
+	const char *rv = NULL;
+	if (value == NULL) {
+		rv = NULL;
+	} else if (strcmp(value, OAUTH_STS_ON_ERROR_RETURN_STR) == 0) {
+		cfg->on_error = OAUTH2_STS_ON_ERROR_RETURN;
+	} else if (strcmp(value, OAUTH_STS_ON_ERROR_PASS_STR) == 0) {
+		cfg->on_error = OAUTH2_STS_PASS;
+	} else {
+		rv = "Invalid value: must be \"" OAUTH_STS_ON_ERROR_RETURN_STR
+		     "\"or \"" OAUTH_STS_ON_ERROR_PASS_STR "\"";
+	}
+	return rv;
+}
+
+static oauth2_sts_cfg_on_error_t sts_cfg_get_on_error(oauth2_sts_cfg_t *cfg)
+{
+	if (cfg->on_error == OAUTH2_CFG_UINT_UNSET)
+		return OAUTH2_STS_ON_ERROR_RETURN;
+	return cfg->on_error;
+}
+
 const char *sts_cfg_set_exchange(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 				 const char *type, const char *url,
 				 const char *options)
@@ -286,6 +318,11 @@ const char *sts_cfg_set_exchange(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	oauth2_cfg_set_uint_slot(
 	    cfg, offsetof(oauth2_sts_cfg_t, cache_expiry_s),
 	    oauth2_nv_list_get(log, params, "cache.expiry"));
+
+	rv = sts_cfg_set_on_error(cfg,
+				  oauth2_nv_list_get(log, params, "on_error"));
+	if (rv != NULL)
+		goto end;
 
 end:
 
@@ -706,13 +743,19 @@ bool sts_request_handler(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	*source_token = oauth2_get_source_token(
 	    log, sts_accept_source_token_in_get(log, cfg), request, srv_cb,
 	    srv_cb_ctx);
-	if (*source_token == NULL)
+	if (*source_token == NULL) {
+		*status_code =
+		    (sts_cfg_get_on_error(cfg) == OAUTH2_STS_PASS) ? 0 : 401;
 		goto end;
+	}
 
 	rc = sts_handler(log, cfg, *source_token, user, &target_token,
 			 status_code);
-	if (rc == false)
+	if (rc == false) {
+		if (sts_cfg_get_on_error(cfg) == OAUTH2_STS_PASS)
+			*status_code = 0;
 		goto end;
+	}
 
 	rc = _sts_set_target_token(log, cfg, request, target_token, srv_cb,
 				   srv_cb_ctx);
@@ -722,7 +765,7 @@ end:
 	if (target_token)
 		oauth2_mem_free(target_token);
 
-	oauth2_debug(log, "leave");
+	oauth2_debug(log, "leave: %d", rc);
 
 	return rc;
 }
