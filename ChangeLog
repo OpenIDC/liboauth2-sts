@@ -1,3 +1,6 @@
+12/06/2022
+- depend on liboauth2 >= 1.4.5.2
+
 07/02/2021
 - add option to not return an error on token missing/exchange failure
 
