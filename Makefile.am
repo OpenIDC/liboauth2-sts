@@ -1,9 +1,8 @@
 ACLOCAL_AMFLAGS=-I m4
 
-EXTRA_DIST = autogen.sh ChangeLog README.md LICENSE DISCLAIMER
+EXTRA_DIST = autogen.sh ChangeLog README.md LICENSE
 
-
-AM_CPPFLAGS = -g -Wall -Werror -Iinclude -Isrc
+AM_CPPFLAGS = -g -Wall -Werror -I${srcdir}/include -I${srcdir}/src
 AM_CPPFLAGS += @OAUTH2_CFLAGS@ @XML_CFLAGS@
 AM_CPPFLAGS += $(CODE_COVERAGE_CPPFLAGS) $(CODE_COVERAGE_CFLAGS)
 
@@ -14,7 +13,13 @@ LIBS += $(CODE_COVERAGE_LIBS)
 
 lib_LTLIBRARIES = liboauth2_sts.la
 
+includesubdir = $(includedir)/oauth2
+
+includesub_HEADERS = \
+	include/oauth2/sts.h
+
 liboauth2_sts_la_SOURCES = \
+	src/sts_int.h \
 	src/sts.c \
 	src/wstrust.c \
 	src/ropc.c \
