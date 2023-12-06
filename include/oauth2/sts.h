@@ -49,6 +49,7 @@
 #define STS_TYPE_WSTRUST 1
 #define STS_TYPE_ROPC 2
 #define STS_TYPE_OTX 3
+#define STS_TYPE_CC 4
 
 OAUTH2_CFG_TYPE_DECLARE(sts, cfg)
 

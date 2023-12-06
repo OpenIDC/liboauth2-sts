@@ -8,6 +8,7 @@ liboauth2_sts_la_SOURCES = \
 	sts.c \
 	wstrust.c \
 	ropc.c \
+	cc.c \
 	otx.c
 
 liboauth2_sts_la_LIBADD =  @XML_LIBS@ @OAUTH2_LIBS@ $(CODE_COVERAGE_LIBS)

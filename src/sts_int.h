@@ -41,6 +41,7 @@ typedef struct oauth2_sts_cfg_t {
 	char *wstrust_value_type;
 
 	oauth2_cfg_ropc_t *ropc;
+	oauth2_cfg_cc_t *cc;
 
 	oauth2_cfg_endpoint_t *otx_endpoint;
 	char *otx_client_id;
@@ -80,6 +81,11 @@ const char *sts_cfg_set_ropc(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 			     const char *url, const char *options);
 bool sts_ropc_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
 		   const char *user, char **rtoken, oauth2_uint_t *status_code);
+
+const char *sts_cfg_set_cc(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
+			   const char *url, const char *options);
+bool sts_cc_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, char **rtoken,
+		 oauth2_uint_t *status_code);
 
 const char *sts_cfg_set_otx(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 			    const char *url, const oauth2_nv_list_t *params);

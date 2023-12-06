@@ -37,6 +37,7 @@
 #define STS_TYPE_DISABLED_STR "disabled"
 #define STS_TYPE_WSTRUST_STR "wstrust"
 #define STS_TYPE_ROPC_STR "ropc"
+#define STS_TYPE_CC_STR "cc"
 #define STS_TYPE_OTX_STR "otx"
 
 #define STS_CFG_DEFAULT_TYPE STS_TYPE_DISABLED
@@ -64,6 +65,7 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path)
 	c->wstrust_value_type = NULL;
 
 	c->ropc = NULL;
+	c->cc = NULL;
 
 	c->otx_endpoint = NULL;
 	c->otx_client_id = NULL;
@@ -103,6 +105,8 @@ void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 
 	cfg->ropc = add->ropc ? oauth2_cfg_ropc_clone(log, add->ropc)
 			      : oauth2_cfg_ropc_clone(log, base->ropc);
+	cfg->cc = add->cc ? oauth2_cfg_cc_clone(log, add->cc)
+			  : oauth2_cfg_cc_clone(log, base->cc);
 
 	cfg->otx_endpoint = oauth2_cfg_endpoint_clone(
 	    NULL, add->otx_endpoint ? add->otx_endpoint : base->otx_endpoint);
@@ -183,6 +187,8 @@ void oauth2_sts_cfg_free(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 
 	if (cfg->ropc)
 		oauth2_cfg_ropc_free(log, cfg->ropc);
+	if (cfg->cc)
+		oauth2_cfg_cc_free(log, cfg->cc);
 
 	if (cfg->otx_endpoint)
 		oauth2_cfg_endpoint_free(log, cfg->otx_endpoint);
@@ -218,14 +224,17 @@ static const char *sts_cfg_set_type(oauth2_sts_cfg_t *cfg, const char *value)
 		cfg->type = STS_TYPE_WSTRUST;
 	} else if (strcmp(value, STS_TYPE_ROPC_STR) == 0) {
 		cfg->type = STS_TYPE_ROPC;
+	} else if (strcmp(value, STS_TYPE_CC_STR) == 0) {
+		cfg->type = STS_TYPE_CC;
 	} else if (strcmp(value, STS_TYPE_OTX_STR) == 0) {
 		cfg->type = STS_TYPE_OTX;
 	} else if (strcmp(value, STS_TYPE_DISABLED_STR) == 0) {
 		cfg->type = STS_TYPE_DISABLED;
 	} else {
 		rv = "Invalid value: must be \"" STS_TYPE_WSTRUST_STR
-		     "\", \"" STS_TYPE_ROPC_STR "\", \"" STS_TYPE_OTX_STR
-		     "\"or \"" STS_TYPE_DISABLED_STR "\"";
+		     "\", \"" STS_TYPE_ROPC_STR "\", \"" STS_TYPE_CC_STR
+		     "\", \"" STS_TYPE_OTX_STR "\"or \"" STS_TYPE_DISABLED_STR
+		     "\"";
 	}
 	return rv;
 }
@@ -301,6 +310,9 @@ const char *sts_cfg_set_exchange(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	switch (sts_cfg_get_type(cfg)) {
 	case STS_TYPE_ROPC:
 		rv = sts_cfg_set_ropc(log, cfg, url, options);
+		break;
+	case STS_TYPE_CC:
+		rv = sts_cfg_set_cc(log, cfg, url, options);
 		break;
 	case STS_TYPE_OTX:
 		rv = sts_cfg_set_otx(log, cfg, url, params);
@@ -668,6 +680,9 @@ static bool sts_token_exchange_exec(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 		break;
 	case STS_TYPE_ROPC:
 		rc = sts_ropc_exec(log, cfg, token, user, rtoken, status_code);
+		break;
+	case STS_TYPE_CC:
+		rc = sts_cc_exec(log, cfg, rtoken, status_code);
 		break;
 	case STS_TYPE_OTX:
 		rc = sts_otx_exec(log, cfg, token, rtoken, status_code);

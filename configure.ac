@@ -1,4 +1,4 @@
-AC_INIT([liboauth2-sts],[3.3.0],[hans.zandbelt@openidc.com])
+AC_INIT([liboauth2-sts],[3.4.0],[hans.zandbelt@openidc.com])
 
 AM_INIT_AUTOMAKE([foreign no-define subdir-objects])
 AC_CONFIG_MACRO_DIRS([m4])
@@ -13,7 +13,7 @@ PKG_CHECK_MODULES(XML, libxml-2.0 >= 2.4)
 AC_SUBST(XML_CFLAGS)
 AC_SUBST(XML_LIBS)
 
-PKG_CHECK_MODULES(OAUTH2, liboauth2 >= 1.4.5.2)
+PKG_CHECK_MODULES(OAUTH2, liboauth2 >= 1.6.0)
 AC_SUBST(OAUTH2_CFLAGS)
 AC_SUBST(OAUTH2_LIBS)
 
