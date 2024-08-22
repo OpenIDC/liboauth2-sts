@@ -1,3 +1,8 @@
+08/22/2024
+- change LICENSE to Apache 2.0
+- depend on liboauth2 >= 2.0.0
+- release 4.0.0
+
 12/06/2023
 - add support for the client credentials grant type
 - depend on liboauth >= 1.6.0
