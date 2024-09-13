@@ -23,6 +23,7 @@ liboauth2_sts_la_SOURCES = \
 	src/sts.c \
 	src/wstrust.c \
 	src/ropc.c \
+	src/cc.c \
 	src/otx.c \
 	src/jwt.c
 
