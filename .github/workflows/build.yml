@@ -1,23 +1,20 @@
 name: Build
 
-on:
-  push:
-  pull_request:
-  schedule:
-    - cron: "0 0 * * *"
+on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Dependencies
       run: |
         sudo apt-get update -y
-        sudo apt-get install -y libssl-dev libcurl4-openssl-dev libhiredis-dev libmemcached-dev
-        sudo apt-get install -y libjansson-dev libcjose-dev apache2-dev libxml2-dev check pkg-config
+        sudo apt-get install -y apache2-dev libcjose-dev libssl-dev check pkg-config
+        sudo apt-get install -y libjansson-dev libcurl4-openssl-dev libhiredis-dev libmemcached-dev libpcre2-dev libpcre2-8-0 libjq-dev
+        sudo apt-get install -y libxml2-dev        
         cd /tmp
         git clone https://github.com/OpenIDC/liboauth2.git
         cd liboauth2
@@ -32,6 +29,9 @@ jobs:
 
     - name: Make
       run: make
+
+    - name: Test
+      run: make check || (cat test-suite.log && exit -1)
 
     - name: Distcheck
       run: make distcheck DESTDIR="/tmp/liboauth2-sts"
