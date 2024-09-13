@@ -49,6 +49,7 @@
 #define STS_TYPE_ROPC 2
 #define STS_TYPE_OTX 3
 #define STS_TYPE_CC 4
+#define STS_TYPE_JWT 5
 
 OAUTH2_CFG_TYPE_DECLARE(sts, cfg)
 
@@ -71,7 +72,7 @@ const char *sts_cfg_set_pass_target_token_in(oauth2_log_t *log,
 
 const char *sts_cfg_set_exchange(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 				 const char *type, const char *url,
-				 const char *options);
+				 const char *options, const char *extra);
 
 int sts_cfg_get_type(oauth2_sts_cfg_t *cfg);
 oauth2_cfg_source_token_t *

@@ -24,6 +24,7 @@
 #include <oauth2/cache.h>
 #include <oauth2/cfg.h>
 #include <oauth2/http.h>
+#include <oauth2/jose.h>
 
 typedef enum oauth2_sts_cfg_on_error_t {
 	OAUTH2_STS_ON_ERROR_RETURN,
@@ -46,6 +47,16 @@ typedef struct oauth2_sts_cfg_t {
 	char *otx_client_id;
 	oauth2_nv_list_t *otx_request_parameters;
 
+	cjose_jwk_t *jwt_jwk;
+	char *jwt_alg;
+	char *jwt_iss;
+	char *jwt_sub;
+	char *jwt_client_id;
+	char *jwt_aud;
+	char *jwt_jq_expr;
+	oauth2_cache_t *jwt_jq_cache;
+	char *jwt_jq_cache_name;
+
 	oauth2_cache_t *cache;
 	char *cache_name;
 	oauth2_time_t cache_expiry_s;
@@ -58,6 +69,8 @@ typedef struct oauth2_sts_cfg_t {
 	char *path;
 
 } oauth2_cfg_sts_t;
+
+oauth2_cache_t *sts_cfg_get_cache(oauth2_log_t *log, oauth2_sts_cfg_t *cfg);
 
 void sts_merge_request_parameters(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 				  oauth2_nv_list_t *source,
@@ -89,6 +102,12 @@ bool sts_cc_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, char **rtoken,
 const char *sts_cfg_set_otx(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 			    const char *url, const oauth2_nv_list_t *params);
 bool sts_otx_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
+		  char **rtoken, oauth2_uint_t *status_code);
+
+const char *sts_cfg_set_jwt(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
+			    const char *jwk, const oauth2_nv_list_t *params,
+			    const char *expr);
+bool sts_jwt_exec(oauth2_log_t *log, oauth2_cfg_sts_t *cfg, const char *token,
 		  char **rtoken, oauth2_uint_t *status_code);
 
 #endif /* _OAUTH2_STS_INT_H_ */

@@ -23,7 +23,8 @@ liboauth2_sts_la_SOURCES = \
 	src/sts.c \
 	src/wstrust.c \
 	src/ropc.c \
-	src/otx.c
+	src/otx.c \
+	src/jwt.c
 
 if HAVE_CHECK
 
@@ -34,8 +35,7 @@ check_liboauth2_sts_SOURCES = \
 	test/check_liboauth2_sts.c
 
 check_liboauth2_sts_CFLAGS = $(AM_CFLAGS) @CHECK_CFLAGS@
-check_liboauth2_sts_LDADD = @CHECK_LIBS@
-
+check_liboauth2_sts_LDADD = liboauth2_sts.la @CHECK_LIBS@
 endif
 
 

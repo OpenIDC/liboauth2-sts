@@ -38,6 +38,7 @@
 #define STS_TYPE_ROPC_STR "ropc"
 #define STS_TYPE_CC_STR "cc"
 #define STS_TYPE_OTX_STR "otx"
+#define STS_TYPE_JWT_STR "jwt"
 
 #define STS_CFG_DEFAULT_TYPE STS_TYPE_DISABLED
 
@@ -70,6 +71,16 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path)
 	c->otx_client_id = NULL;
 	c->otx_request_parameters = NULL;
 
+	c->jwt_jwk = NULL;
+	c->jwt_alg = NULL;
+	c->jwt_iss = NULL;
+	c->jwt_sub = NULL;
+	c->jwt_client_id = NULL;
+	c->jwt_aud = NULL;
+	c->jwt_jq_expr = NULL;
+	c->jwt_jq_cache = NULL;
+	c->jwt_jq_cache_name = NULL;
+
 	c->cache = NULL;
 	c->cache_name = NULL;
 	c->cache_expiry_s = OAUTH2_CFG_TIME_UNSET;
@@ -87,6 +98,8 @@ oauth2_sts_cfg_t *oauth2_sts_cfg_create(oauth2_log_t *log, const char *path)
 void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 			  oauth2_sts_cfg_t *base, oauth2_sts_cfg_t *add)
 {
+	cjose_err err;
+
 	cfg->type = add->type != OAUTH2_CFG_UINT_UNSET ? add->type : base->type;
 
 	cfg->wstrust_endpoint = oauth2_cfg_endpoint_clone(
@@ -116,6 +129,27 @@ void oauth2_sts_cfg_merge(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	    oauth2_nv_list_clone(log, add->otx_request_parameters != NULL
 					  ? add->otx_request_parameters
 					  : base->otx_request_parameters);
+
+	cfg->jwt_jwk = cjose_jwk_retain(
+	    add->jwt_jwk != NULL ? add->jwt_jwk : base->jwt_jwk, &err);
+	cfg->jwt_alg =
+	    oauth2_strdup(add->jwt_alg != NULL ? add->jwt_alg : base->jwt_alg);
+	cfg->jwt_iss =
+	    oauth2_strdup(add->jwt_iss != NULL ? add->jwt_iss : base->jwt_iss);
+	cfg->jwt_sub =
+	    oauth2_strdup(add->jwt_sub != NULL ? add->jwt_sub : base->jwt_sub);
+	cfg->jwt_client_id =
+	    oauth2_strdup(add->jwt_client_id != NULL ? add->jwt_client_id
+						     : base->jwt_client_id);
+	cfg->jwt_aud =
+	    oauth2_strdup(add->jwt_aud != NULL ? add->jwt_aud : base->jwt_aud);
+	cfg->jwt_jq_expr = oauth2_strdup(
+	    add->jwt_jq_expr != NULL ? add->jwt_jq_expr : base->jwt_jq_expr);
+	cfg->jwt_jq_cache =
+	    add->jwt_jq_cache ? add->jwt_jq_cache : base->jwt_jq_cache;
+	cfg->jwt_jq_cache_name =
+	    oauth2_strdup(add->jwt_jq_cache_name ? add->jwt_jq_cache_name
+						 : base->jwt_jq_cache_name);
 
 	cfg->cache = add->cache ? add->cache : base->cache;
 	cfg->cache_name =
@@ -196,6 +230,23 @@ void oauth2_sts_cfg_free(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 	if (cfg->otx_request_parameters)
 		oauth2_nv_list_free(log, cfg->otx_request_parameters);
 
+	if (cfg->jwt_jwk)
+		cjose_jwk_release(cfg->jwt_jwk);
+	if (cfg->jwt_alg)
+		oauth2_mem_free(cfg->jwt_alg);
+	if (cfg->jwt_iss)
+		oauth2_mem_free(cfg->jwt_iss);
+	if (cfg->jwt_sub)
+		oauth2_mem_free(cfg->jwt_sub);
+	if (cfg->jwt_client_id)
+		oauth2_mem_free(cfg->jwt_client_id);
+	if (cfg->jwt_aud)
+		oauth2_mem_free(cfg->jwt_aud);
+	if (cfg->jwt_jq_expr)
+		oauth2_mem_free(cfg->jwt_jq_expr);
+	if (cfg->jwt_jq_cache_name)
+		oauth2_mem_free(cfg->jwt_jq_cache_name);
+
 	if (cfg->accept_source_token_in)
 		oauth2_cfg_source_token_free(log, cfg->accept_source_token_in);
 	/*
@@ -227,6 +278,8 @@ static const char *sts_cfg_set_type(oauth2_sts_cfg_t *cfg, const char *value)
 		cfg->type = STS_TYPE_CC;
 	} else if (strcmp(value, STS_TYPE_OTX_STR) == 0) {
 		cfg->type = STS_TYPE_OTX;
+	} else if (strcmp(value, STS_TYPE_JWT_STR) == 0) {
+		cfg->type = STS_TYPE_JWT;
 	} else if (strcmp(value, STS_TYPE_DISABLED_STR) == 0) {
 		cfg->type = STS_TYPE_DISABLED;
 	} else {
@@ -246,8 +299,7 @@ int sts_cfg_get_type(oauth2_sts_cfg_t *cfg)
 	return cfg->type;
 }
 
-static oauth2_cache_t *sts_cfg_get_cache(oauth2_log_t *log,
-					 oauth2_sts_cfg_t *cfg)
+oauth2_cache_t *sts_cfg_get_cache(oauth2_log_t *log, oauth2_sts_cfg_t *cfg)
 {
 	oauth2_debug(log, "cfg->cache=%p", cfg->cache);
 	if (cfg->cache == NULL) {
@@ -292,7 +344,7 @@ static oauth2_sts_cfg_on_error_t sts_cfg_get_on_error(oauth2_sts_cfg_t *cfg)
 
 const char *sts_cfg_set_exchange(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 				 const char *type, const char *url,
-				 const char *options)
+				 const char *options, const char *extra)
 {
 	const char *rv = NULL;
 	oauth2_nv_list_t *params = NULL;
@@ -319,10 +371,16 @@ const char *sts_cfg_set_exchange(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 	case STS_TYPE_WSTRUST:
 		rv = sts_cfg_set_wstrust(log, cfg, url, params);
 		break;
+	case STS_TYPE_JWT:
+		rv = sts_cfg_set_jwt(log, cfg, url, params, extra);
+		break;
 	case STS_TYPE_DISABLED:
 	default:
 		break;
 	}
+
+	if (rv != NULL)
+		goto end;
 
 	cfg->cache_name =
 	    oauth2_strdup(oauth2_nv_list_get(log, params, "cache.name"));
@@ -685,6 +743,9 @@ static bool sts_token_exchange_exec(oauth2_log_t *log, oauth2_sts_cfg_t *cfg,
 		break;
 	case STS_TYPE_OTX:
 		rc = sts_otx_exec(log, cfg, token, rtoken, status_code);
+		break;
+	case STS_TYPE_JWT:
+		rc = sts_jwt_exec(log, cfg, token, rtoken, status_code);
 		break;
 	case STS_TYPE_DISABLED:
 		break;
